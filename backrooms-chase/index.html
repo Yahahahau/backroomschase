@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0905">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Backrooms Run</title>
+<style>
+:root{--txt:#efe6c0;--dim:rgba(239,230,192,.6);--zc:#a9c46b;--panel:rgba(12,10,6,.58);--line:rgba(255,240,170,.16)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--txt)}
+#app{position:fixed;inset:0;height:100%;overflow:hidden}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+.fx{position:absolute;inset:0;pointer-events:none;opacity:0}
+#fxDark{opacity:1;background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(0,0,0,.55) 100%)}
+#fxRed{background:#8a0000}
+#fxVig{background:radial-gradient(ellipse at 50% 50%,rgba(160,0,0,0) 35%,rgba(180,0,0,.92) 100%)}
+#hud{position:absolute;inset:0;pointer-events:none}
+#top{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;display:flex;flex-direction:column;gap:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.row{display:flex;justify-content:space-between;align-items:center}
+.lbl{font-size:11px;letter-spacing:.16em;color:var(--dim);font-weight:600}
+#gapNum{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+#bar{position:relative;height:12px;margin:7px 0;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+#barFill{position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--zc);transition:background .3s}
+#barSeg{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(6.25% - 2px),rgba(10,8,4,.85) calc(6.25% - 2px) 6.25%)}
+#zoneChip{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--zc)}
+#stats{display:flex;gap:8px}
+.stat{flex:1;padding:7px 10px}
+.stat .k{display:block;font-size:10px;letter-spacing:.16em;color:var(--dim);font-weight:600}
+.stat b{font-size:18px;font-variant-numeric:tabular-nums}
+.stat i{font-style:normal;font-size:11px;color:var(--dim);margin-left:3px}
+#warn{position:absolute;left:0;right:0;top:34%;display:flex;justify-content:center;align-items:center;gap:10px;font-weight:800;letter-spacing:.3em;font-size:22px;color:#ff6a5c;opacity:0;transition:opacity .2s}
+#warn.on{opacity:1;animation:bl .5s steps(2) infinite}
+#warn svg{width:26px;height:26px}
+@keyframes bl{50%{opacity:.35}}
+#hint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 140px);text-align:center;font-size:13px;letter-spacing:.2em;color:var(--dim);transition:opacity .5s}
+#bottom{position:absolute;left:0;right:0;bottom:0;padding:0 16px calc(env(safe-area-inset-bottom) + 18px);display:flex;align-items:center;justify-content:center;gap:12px}
+#bottom button{pointer-events:auto}
+svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rb{width:58px;height:58px;border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--txt);display:flex;align-items:center;justify-content:center;padding:0}
+.rb svg{width:26px;height:26px}
+.rb.off{color:rgba(239,230,192,.35)}
+#btnRun{position:relative;flex:1;max-width:250px;height:100px;border-radius:30px;border:1px solid rgba(255,235,150,.3);color:#f3e9b5;background:linear-gradient(180deg,rgba(70,60,26,.8),rgba(26,21,8,.85));font:800 26px/1 inherit;letter-spacing:.22em;display:flex;align-items:center;justify-content:center;gap:10px;overflow:hidden;padding:0;touch-action:none;transition:transform .05s}
+#btnRun svg{width:30px;height:30px;stroke-width:2.4}
+#btnRun.down{transform:scale(.95);background:linear-gradient(180deg,rgba(120,104,40,.9),rgba(50,42,14,.9))}
+#runFill{position:absolute;left:0;bottom:0;height:5px;width:100%;background:#e6d27a;transform-origin:left;transform:scaleX(0)}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(6,5,2,.74);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:24px;text-align:center;transition:opacity .3s}
+.ov.hide{opacity:0;pointer-events:none;visibility:hidden}
+h1{margin:0;font-size:38px;letter-spacing:.14em;font-weight:800}
+h2{margin:0;font-size:30px;letter-spacing:.16em;font-weight:800;color:#ff6a5c}
+.sub{color:var(--dim);font-size:14px;line-height:1.5;max-width:300px}
+.big{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums}
+.btn{display:flex;align-items:center;gap:10px;padding:16px 38px;border-radius:999px;border:1px solid rgba(255,235,150,.35);background:rgba(90,78,30,.55);color:#f3e9b5;font:700 18px/1 inherit;letter-spacing:.2em}
+.btn svg{width:22px;height:22px}
+.btn:active{background:rgba(130,112,44,.7)}
+.btn.ghost{background:transparent;border-color:var(--line);font-size:14px;padding:12px 26px}
+.qsel{display:flex;gap:6px}
+.qsel button{padding:8px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);font:600 11px/1 inherit;letter-spacing:.12em}
+.qsel button.on{background:rgba(230,210,122,.18);color:var(--txt);border-color:rgba(230,210,122,.5)}
+#toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 150px);transform:translateX(-50%);padding:8px 16px;border-radius:999px;background:var(--panel);font-size:12px;letter-spacing:.12em;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1}
+#hud.z-safe{--zc:#a9c46b}#hud.z-warn{--zc:#e2b53f}#hud.z-danger{--zc:#dd7a35}#hud.z-crit{--zc:#d23a2e}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+  <div class="fx" id="fxDark"></div>
+  <div class="fx" id="fxRed"></div>
+  <div class="fx" id="fxVig"></div>
+  <div id="hud" class="z-safe">
+    <div id="top">
+      <div class="panel" id="distPanel">
+        <div class="row"><span class="lbl">MONSTER DISTANCE</span><span id="gapNum">30 m</span></div>
+        <div id="bar"><div id="barFill"></div><div id="barSeg"></div></div>
+        <div class="row"><span id="zoneChip">SAFE</span><span class="lbl" id="flrLbl">FLOOR 3</span></div>
+      </div>
+      <div id="stats">
+        <div class="panel stat"><span class="k">SPEED</span><b id="spdNum">0</b><i>km/h</i></div>
+        <div class="panel stat"><span class="k">DISTANCE</span><b id="runNum">0</b><i>m</i></div>
+      </div>
+    </div>
+    <div id="warn"><svg viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>WARNING</div>
+    <div id="hint">TAP RUN REPEATEDLY</div>
+    <div id="bottom">
+      <button class="rb" id="btnFlash" aria-label="Flashlight"><svg viewBox="0 0 24 24"><path d="M8 2h8l-1 5H9z"/><path d="M9 7h6v13a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/><path d="M12 11v3"/></svg></button>
+      <button id="btnRun"><span id="runFill"></span><svg viewBox="0 0 24 24"><path d="M5 6l7 6-7 6M12 6l7 6-7 6"/></svg>RUN</button>
+      <button class="rb" id="btnPause" aria-label="Pause"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+    </div>
+  </div>
+  <div id="menu" class="ov">
+    <h1>BACKROOMS<br>RUN</h1>
+    <div class="sub">Tap RUN repeatedly to escape. Stop, and it catches you.</div>
+    <div class="sub">BEST <b id="bestMenu">0</b> m</div>
+    <button class="btn" id="btnPlay"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M7 4l13 8-13 8z"/></svg>PLAY</button>
+    <div class="lbl">QUALITY</div><div class="qsel" id="qMenu"></div>
+  </div>
+  <div id="pause" class="ov hide">
+    <h1>PAUSED</h1>
+    <button class="btn" id="btnResume"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M7 4l13 8-13 8z"/></svg>RESUME</button>
+    <button class="btn ghost" id="btnQuit">MAIN MENU</button>
+    <div class="lbl">QUALITY</div><div class="qsel" id="qPause"></div>
+  </div>
+  <div id="over" class="ov hide">
+    <h2>GAME OVER</h2>
+    <div class="sub">DISTANCE REACHED</div>
+    <div class="big"><span id="overDist">0</span> m</div>
+    <div class="sub" id="overBest">BEST 0 m</div>
+    <button class="btn" id="btnRetry"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4.5h4.5"/></svg>RETRY</button>
+  </div>
+  <div id="toast"></div>
+  <div id="fatal" class="ov hide" style="background:#000"><h2>WebGL unavailable</h2><div class="sub">This game needs WebGL and an internet connection to load Three.js.</div></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>window.THREE||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')</script>
+<script src="js/core.js"></script>
+<script src="js/level.js"></script>
+<script src="js/actors.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
